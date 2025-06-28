@@ -139,10 +139,22 @@ auto exp::parse(const std::string_view& str) -> std::unique_ptr<exp> {
 
 auto exp_number::to_string() const -> std::string { return std::to_string(n); }
 
+auto exp_number::duplicate() const -> std::unique_ptr<exp> {
+  auto copy = std::make_unique<exp_number>();
+  copy->n = n;
+  return copy;
+}
+
 auto exp_string::to_string() const -> std::string {
   std::stringstream ss;
   ss << '"' << str << '"';
   return ss.str();
+}
+
+auto exp_string::duplicate() const -> std::unique_ptr<exp> {
+  auto copy = std::make_unique<exp_string>();
+  copy->str = str;
+  return copy;
 }
 
 auto exp_list::to_string() const -> std::string {
@@ -159,12 +171,32 @@ auto exp_list::to_string() const -> std::string {
   return ss.str();
 }
 
+auto exp_list::duplicate() const -> std::unique_ptr<exp> {
+  auto copy = std::make_unique<exp_list>();
+  for (auto& exp : list) {
+    copy->list.emplace_back(exp->duplicate());
+  }
+  return copy;
+}
+
 auto exp_quoted::to_string() const -> std::string {
   std::stringstream ss;
   ss << '\'' << inner_exp->to_string();
   return ss.str();
 }
 
+auto exp_quoted::duplicate() const -> std::unique_ptr<exp> {
+  auto copy = std::make_unique<exp_quoted>();
+  copy->inner_exp = inner_exp->duplicate();
+  return copy;
+}
+
 auto exp_symbol::to_string() const -> std::string {
   return str;
+}
+
+auto exp_symbol::duplicate() const -> std::unique_ptr<exp> {
+  auto copy = std::make_unique<exp_symbol>();
+  copy->str = str;
+  return copy;
 }
