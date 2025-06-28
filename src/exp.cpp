@@ -6,14 +6,40 @@
 
 static auto is_digit(const std::string_view& str) -> bool {
   bool ret = true && !str.empty();
-  for (int i = 0; i < str.length() && ret; ++i) {
-    ret = ret && std::isdigit(str[i]);
+  int decimal = 0;
+  for (int i = 0; i < str.length() && ret && decimal < 2; ++i) {
+    if (str[i] == '.') {
+      ++decimal;
+    } else {
+      ret = ret && std::isdigit(str[i]);
+    }
   }
-  return ret;
+  return ret && decimal < 2;
 }
 
 static auto is_string(const std::string_view &str) -> bool {
   return !str.empty() && str.starts_with('"') && str.ends_with('"');
+}
+
+static auto is_list(const std::string_view &str) -> bool {
+  return !str.empty() && str.starts_with('(') && str.ends_with(')');
+}
+
+static auto is_quoted(const std::string_view &str) -> bool {
+  bool is_empty = str.empty();
+  bool begin_quote = str.starts_with('\'');
+  bool has_space = false;
+  for (auto c : str) {
+    if (c == ' ') {
+      has_space = true;
+      break;
+    }
+  }
+  return !is_empty && begin_quote && !has_space;
+}
+
+static auto is_symbol(const std::string_view &str) -> bool {
+  return str.find(' ') == std::string_view::npos;
 }
 
 // begin must point to an opening parenthesis, if no matching closing
@@ -22,6 +48,7 @@ static auto is_string(const std::string_view &str) -> bool {
 static auto find_matching_closing_paren(std::string_view::const_iterator begin,
                                         std::string_view::const_iterator end)
     -> std::string_view::const_iterator {
+  assert(*begin == '(');
   auto it = begin + 1;
   int count = 1;
   while (count > 0 && it < end) {
@@ -39,7 +66,8 @@ static auto find_matching_closing_paren(std::string_view::const_iterator begin,
 }
 
 // str must begins with ( and ends with )
-static auto parse_list(const std::string_view& str) -> std::unique_ptr<exp> {
+static auto parse_list(const std::string_view& str) -> std::unique_ptr<exp_list> {
+  assert(str.starts_with('(') && str.ends_with(')'));
   auto new_exp = std::make_unique<exp_list>();
   auto start = str.begin() + 1;
   const auto closing_paren_pos = str.end() - 1;
@@ -73,6 +101,13 @@ static auto parse_list(const std::string_view& str) -> std::unique_ptr<exp> {
   return new_exp;
 }
 
+static auto parse_quoted(const std::string_view& str) -> std::unique_ptr<exp> {
+  assert(str.starts_with('\''));
+  auto result = std::make_unique<exp_quoted>();
+  result->inner_exp = exp::parse({str.cbegin() + 1, str.cend()});
+  return result;
+}
+
 auto exp::is_self_evaluating(exp *e) -> bool {
   return dynamic_cast<exp_number *>(e) != nullptr ||
          dynamic_cast<exp_string *>(e) != nullptr;
@@ -84,7 +119,7 @@ auto exp::parse(const std::string_view& str) -> std::unique_ptr<exp> {
   }
   if (is_digit(str)) {
     auto new_exp = std::make_unique<exp_number>();
-    new_exp->n = std::atoi(str.data());
+    new_exp->n = std::atof(str.data());
     return new_exp;
   }
   if (is_string(str)) {
@@ -92,8 +127,19 @@ auto exp::parse(const std::string_view& str) -> std::unique_ptr<exp> {
     new_exp->str = {str.begin() + 1, str.end() - 1};
     return new_exp;
   }
-  assert(str.starts_with('(') && str.ends_with(')')); // must be a list
-  return parse_list(str);
+  if (is_quoted(str)) {
+    return parse_quoted(str);
+  }
+  if (is_list(str)) {
+    return parse_list(str);
+  }
+  if (is_symbol(str)) {
+    auto symbol_exp = std::make_unique<exp_symbol>();
+    symbol_exp->str = str;
+    return symbol_exp;
+  }
+  assert(false); // unknown expression type
+  return nullptr;
 }
 
 auto exp_number::to_string() const -> std::string { return std::to_string(n); }
@@ -116,4 +162,14 @@ auto exp_list::to_string() const -> std::string {
   }
   ss << ")";
   return ss.str();
+}
+
+auto exp_quoted::to_string() const -> std::string {
+  std::stringstream ss;
+  ss << '\'' << inner_exp->to_string();
+  return ss.str();
+}
+
+auto exp_symbol::to_string() const -> std::string {
+  return str;
 }
