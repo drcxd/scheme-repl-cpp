@@ -145,6 +145,10 @@ auto exp_number::duplicate() const -> std::unique_ptr<exp> {
   return copy;
 }
 
+auto exp_number::eval() -> std::unique_ptr<exp> {
+  return duplicate();
+}
+
 auto exp_string::to_string() const -> std::string {
   std::stringstream ss;
   ss << '"' << str << '"';
@@ -155,6 +159,10 @@ auto exp_string::duplicate() const -> std::unique_ptr<exp> {
   auto copy = std::make_unique<exp_string>();
   copy->str = str;
   return copy;
+}
+
+auto exp_string::eval() -> std::unique_ptr<exp> {
+  return duplicate();
 }
 
 auto exp_list::to_string() const -> std::string {
