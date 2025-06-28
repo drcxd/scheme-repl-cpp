@@ -66,7 +66,7 @@ static auto find_matching_closing_paren(std::string_view::const_iterator begin,
 }
 
 // str must begins with ( and ends with )
-static auto parse_list(const std::string_view& str) -> std::unique_ptr<exp_list> {
+static auto parse_list(const std::string_view& str) -> uptr<exp_list> {
   assert(str.starts_with('(') && str.ends_with(')'));
   auto new_exp = std::make_unique<exp_list>();
   auto start = str.begin() + 1;
@@ -101,14 +101,14 @@ static auto parse_list(const std::string_view& str) -> std::unique_ptr<exp_list>
   return new_exp;
 }
 
-static auto parse_quoted(const std::string_view& str) -> std::unique_ptr<exp> {
+static auto parse_quoted(const std::string_view& str) -> uptr<exp> {
   assert(str.starts_with('\''));
   auto result = std::make_unique<exp_quoted>();
   result->inner_exp = exp::parse({str.cbegin() + 1, str.cend()});
   return result;
 }
 
-auto exp::parse(const std::string_view& str) -> std::unique_ptr<exp> {
+auto exp::parse(const std::string_view& str) -> uptr<exp> {
   if (str.empty()) {
     return nullptr;
   }
@@ -139,13 +139,13 @@ auto exp::parse(const std::string_view& str) -> std::unique_ptr<exp> {
 
 auto exp_number::to_string() const -> std::string { return std::to_string(n); }
 
-auto exp_number::duplicate() const -> std::unique_ptr<exp> {
+auto exp_number::duplicate() const -> uptr<exp> {
   auto copy = std::make_unique<exp_number>();
   copy->n = n;
   return copy;
 }
 
-auto exp_number::eval() -> std::unique_ptr<exp> {
+auto exp_number::eval() -> uptr<exp> {
   return duplicate();
 }
 
@@ -155,13 +155,13 @@ auto exp_string::to_string() const -> std::string {
   return ss.str();
 }
 
-auto exp_string::duplicate() const -> std::unique_ptr<exp> {
+auto exp_string::duplicate() const -> uptr<exp> {
   auto copy = std::make_unique<exp_string>();
   copy->str = str;
   return copy;
 }
 
-auto exp_string::eval() -> std::unique_ptr<exp> {
+auto exp_string::eval() -> uptr<exp> {
   return duplicate();
 }
 
@@ -179,7 +179,7 @@ auto exp_list::to_string() const -> std::string {
   return ss.str();
 }
 
-auto exp_list::duplicate() const -> std::unique_ptr<exp> {
+auto exp_list::duplicate() const -> uptr<exp> {
   auto copy = std::make_unique<exp_list>();
   for (auto& exp : list) {
     copy->list.emplace_back(exp->duplicate());
@@ -193,7 +193,7 @@ auto exp_quoted::to_string() const -> std::string {
   return ss.str();
 }
 
-auto exp_quoted::duplicate() const -> std::unique_ptr<exp> {
+auto exp_quoted::duplicate() const -> uptr<exp> {
   auto copy = std::make_unique<exp_quoted>();
   copy->inner_exp = inner_exp->duplicate();
   return copy;
@@ -203,7 +203,7 @@ auto exp_symbol::to_string() const -> std::string {
   return str;
 }
 
-auto exp_symbol::duplicate() const -> std::unique_ptr<exp> {
+auto exp_symbol::duplicate() const -> uptr<exp> {
   auto copy = std::make_unique<exp_symbol>();
   copy->str = str;
   return copy;
