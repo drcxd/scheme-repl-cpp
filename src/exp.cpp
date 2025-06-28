@@ -108,11 +108,6 @@ static auto parse_quoted(const std::string_view& str) -> std::unique_ptr<exp> {
   return result;
 }
 
-auto exp::is_self_evaluating(exp *e) -> bool {
-  return dynamic_cast<exp_number *>(e) != nullptr ||
-         dynamic_cast<exp_string *>(e) != nullptr;
-}
-
 auto exp::parse(const std::string_view& str) -> std::unique_ptr<exp> {
   if (str.empty()) {
     return nullptr;
