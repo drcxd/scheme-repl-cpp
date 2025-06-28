@@ -199,6 +199,10 @@ auto exp_quoted::duplicate() const -> uptr<exp> {
   return copy;
 }
 
+auto exp_quoted::eval() -> uptr<exp> {
+  return duplicate();
+}
+
 auto exp_symbol::to_string() const -> std::string {
   return str;
 }

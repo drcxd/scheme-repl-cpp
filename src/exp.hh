@@ -48,5 +48,6 @@ struct exp_list : public exp {
 struct exp_quoted : public exp {
   auto to_string() const -> std::string override;
   auto duplicate() const -> uptr<exp> override;
+  auto eval() -> uptr<exp> override;
   uptr<exp> inner_exp;
 };
