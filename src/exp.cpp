@@ -181,9 +181,7 @@ auto exp_list_t::to_string() const -> std::string {
 
 auto exp_list_t::duplicate() const -> uptr<exp_t> {
   auto copy = std::make_unique<exp_list_t>();
-  for (auto& exp : list) {
-    copy->list.emplace_back(exp->duplicate());
-  }
+  copy->list = list;
   return copy;
 }
 

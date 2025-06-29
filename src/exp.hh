@@ -38,11 +38,10 @@ struct exp_symbol_t : public exp_t {
   std::string str;
 };
 
-// quoted values are supported as lists: (quote ...)
 struct exp_list_t : public exp_t {
   auto to_string() const -> std::string override;
   auto duplicate() const -> uptr<exp_t> override;
-  std::list<uptr<exp_t>> list;
+  std::list<sptr<exp_t>> list;
 };
 
 struct exp_quoted_t : public exp_t {
