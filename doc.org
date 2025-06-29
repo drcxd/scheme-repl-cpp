@@ -1,0 +1,15 @@
+* On Memory Management
+
+In Scheme, there is a garbage collector managing memory for the programmer. Since we are implementing a Scheme interpreter using C++, we have to manage the memory ourselves.
+
+In my initial design, I abstract an expression as a base class. There are different derived classes representing certain kinds of expressions, such as numbers, strings, symbols, quoted expressions and lists.
+
+Now in Scheme, a list is a linked list of pairs, the first element in the pair holds the reference to the value while the second element holds the reference to the next pair in the list. It can be seen as an implementation of linked list in C++, so we decide to use ~std::list<exp>~ to represent lists in Scheme.
+
+A problem we are not sure now is whether the instances of expressions should be passed around by reference or by value. If they are passed by reference, then their memory must be managed somehow. In Scheme, the lists are passed by value, though it consists of pointers.
+
+As a result, we use a similar memory management as Scheme: all expressions are passed by value, but list elements are referenced through pointers.
+
+* On Implementation of Environment
+
+In explicit control evaluator, the environment is implemented using lists. Of course, this is because it is implemented using Scheme. In our implementation, we decide to use C++ data structures to implement the environment.
