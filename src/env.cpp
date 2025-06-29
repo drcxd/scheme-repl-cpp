@@ -1,7 +1,10 @@
 #include "env.hh"
+
 #include <cassert>
 
-auto env_t::lookup_variable_value(const std::string_view &var) -> exp * {
+#include "exp.hh"
+
+auto env_t::lookup_variable_value(const std::string_view &var) -> exp_t * {
   for (auto &frame : frames) {
     for (auto &record : frame->records) {
       if (record->first == var) {
@@ -12,7 +15,7 @@ auto env_t::lookup_variable_value(const std::string_view &var) -> exp * {
   return nullptr;
 }
 
-auto env_t::define_variable(const std::string_view &var, uptr<exp> value)
+auto env_t::define_variable(const std::string_view &var, uptr<exp_t> value)
     -> void {
   assert(!frames.empty());
   auto &first_frame = frames.front();

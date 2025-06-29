@@ -50,3 +50,7 @@ struct exp_quoted_t : public exp_t {
   auto eval() -> uptr<exp_t> override;
   uptr<exp_t> inner_exp;
 };
+
+struct exp_define_t : public exp_list_t {
+  auto eval() -> uptr<exp_t> override;
+};

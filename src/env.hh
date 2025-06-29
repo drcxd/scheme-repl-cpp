@@ -5,9 +5,9 @@
 
 #include "typedef.hh"
 
-struct exp;
+struct exp_t;
 
-using record_t = std::pair<std::string, uptr<exp>>;
+using record_t = std::pair<std::string, uptr<exp_t>>;
 
 struct frame_t {
   std::list<sptr<record_t>> records;
@@ -16,11 +16,11 @@ struct frame_t {
 struct env_t {
   std::list<sptr<frame_t>> frames;
 
-  auto lookup_variable_value(const std::string_view &var) -> exp *;
-  auto define_variable(const std::string_view &var, uptr<exp> value) -> void;
+  auto lookup_variable_value(const std::string_view &var) -> exp_t *;
+  auto define_variable(const std::string_view &var, uptr<exp_t> value) -> void;
 };
 
 namespace genv {
-  auto init_global_environment() -> void;
-  auto get_global_environment() -> env_t;
-}
+auto init_global_environment() -> void;
+auto get_global_environment() -> env_t;
+} // namespace genv

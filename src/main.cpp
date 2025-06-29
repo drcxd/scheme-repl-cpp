@@ -1,8 +1,12 @@
 #include <iostream>
 
+#include "env.hh"
 #include "exp.hh"
 
 int main(int argc, char **argv) {
+
+  genv::init_global_environment();
+
   std::string input;
   while (true) {
     std::cout << "Input:\n";
