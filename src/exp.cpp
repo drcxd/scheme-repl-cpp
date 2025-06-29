@@ -66,9 +66,9 @@ static auto find_matching_closing_paren(std::string_view::const_iterator begin,
 }
 
 // str must begins with ( and ends with )
-static auto parse_list(const std::string_view& str) -> uptr<exp_list> {
+static auto parse_list(const std::string_view& str) -> uptr<exp_list_t> {
   assert(str.starts_with('(') && str.ends_with(')'));
-  auto new_exp = std::make_unique<exp_list>();
+  auto new_exp = std::make_unique<exp_list_t>();
   auto start = str.begin() + 1;
   const auto closing_paren_pos = str.end() - 1;
   // scan the elements of the list
@@ -84,7 +84,7 @@ static auto parse_list(const std::string_view& str) -> uptr<exp_list> {
         throw std::runtime_error("malformed expression");
       }
       ++end;
-      auto result = exp::parse({start, end});
+      auto result = exp_t::parse({start, end});
       if (result.get() != nullptr) { // handle the case of an empty list
         new_exp->list.push_back(std::move(result));
       }
@@ -93,7 +93,7 @@ static auto parse_list(const std::string_view& str) -> uptr<exp_list> {
       while (*end != ' ' && end < closing_paren_pos) {
         ++end;
       }
-      new_exp->list.push_back(exp::parse({start, end}));
+      new_exp->list.push_back(exp_t::parse({start, end}));
     }
     // now ends either points to a closing parenthesis or a space
     start = end + 1;
@@ -101,24 +101,24 @@ static auto parse_list(const std::string_view& str) -> uptr<exp_list> {
   return new_exp;
 }
 
-static auto parse_quoted(const std::string_view& str) -> uptr<exp> {
+static auto parse_quoted(const std::string_view& str) -> uptr<exp_t> {
   assert(str.starts_with('\''));
-  auto result = std::make_unique<exp_quoted>();
-  result->inner_exp = exp::parse({str.cbegin() + 1, str.cend()});
+  auto result = std::make_unique<exp_quoted_t>();
+  result->inner_exp = exp_t::parse({str.cbegin() + 1, str.cend()});
   return result;
 }
 
-auto exp::parse(const std::string_view& str) -> uptr<exp> {
+auto exp_t::parse(const std::string_view& str) -> uptr<exp_t> {
   if (str.empty()) {
     return nullptr;
   }
   if (is_digit(str)) {
-    auto new_exp = std::make_unique<exp_number>();
+    auto new_exp = std::make_unique<exp_number_t>();
     new_exp->n = std::atof(str.data());
     return new_exp;
   }
   if (is_string(str)) {
-    auto new_exp = std::make_unique<exp_string>();
+    auto new_exp = std::make_unique<exp_string_t>();
     new_exp->str = {str.begin() + 1, str.end() - 1};
     return new_exp;
   }
@@ -129,7 +129,7 @@ auto exp::parse(const std::string_view& str) -> uptr<exp> {
     return parse_list(str);
   }
   if (is_symbol(str)) {
-    auto symbol_exp = std::make_unique<exp_symbol>();
+    auto symbol_exp = std::make_unique<exp_symbol_t>();
     symbol_exp->str = str;
     return symbol_exp;
   }
@@ -137,35 +137,35 @@ auto exp::parse(const std::string_view& str) -> uptr<exp> {
   return nullptr;
 }
 
-auto exp_number::to_string() const -> std::string { return std::to_string(n); }
+auto exp_number_t::to_string() const -> std::string { return std::to_string(n); }
 
-auto exp_number::duplicate() const -> uptr<exp> {
-  auto copy = std::make_unique<exp_number>();
+auto exp_number_t::duplicate() const -> uptr<exp_t> {
+  auto copy = std::make_unique<exp_number_t>();
   copy->n = n;
   return copy;
 }
 
-auto exp_number::eval() -> uptr<exp> {
+auto exp_number_t::eval() -> uptr<exp_t> {
   return duplicate();
 }
 
-auto exp_string::to_string() const -> std::string {
+auto exp_string_t::to_string() const -> std::string {
   std::stringstream ss;
   ss << '"' << str << '"';
   return ss.str();
 }
 
-auto exp_string::duplicate() const -> uptr<exp> {
-  auto copy = std::make_unique<exp_string>();
+auto exp_string_t::duplicate() const -> uptr<exp_t> {
+  auto copy = std::make_unique<exp_string_t>();
   copy->str = str;
   return copy;
 }
 
-auto exp_string::eval() -> uptr<exp> {
+auto exp_string_t::eval() -> uptr<exp_t> {
   return duplicate();
 }
 
-auto exp_list::to_string() const -> std::string {
+auto exp_list_t::to_string() const -> std::string {
   std::stringstream ss;
   ss << "(";
   for (auto it = list.cbegin(); it != list.cend(); ++it) {
@@ -179,36 +179,36 @@ auto exp_list::to_string() const -> std::string {
   return ss.str();
 }
 
-auto exp_list::duplicate() const -> uptr<exp> {
-  auto copy = std::make_unique<exp_list>();
+auto exp_list_t::duplicate() const -> uptr<exp_t> {
+  auto copy = std::make_unique<exp_list_t>();
   for (auto& exp : list) {
     copy->list.emplace_back(exp->duplicate());
   }
   return copy;
 }
 
-auto exp_quoted::to_string() const -> std::string {
+auto exp_quoted_t::to_string() const -> std::string {
   std::stringstream ss;
   ss << '\'' << inner_exp->to_string();
   return ss.str();
 }
 
-auto exp_quoted::duplicate() const -> uptr<exp> {
-  auto copy = std::make_unique<exp_quoted>();
+auto exp_quoted_t::duplicate() const -> uptr<exp_t> {
+  auto copy = std::make_unique<exp_quoted_t>();
   copy->inner_exp = inner_exp->duplicate();
   return copy;
 }
 
-auto exp_quoted::eval() -> uptr<exp> {
+auto exp_quoted_t::eval() -> uptr<exp_t> {
   return duplicate();
 }
 
-auto exp_symbol::to_string() const -> std::string {
+auto exp_symbol_t::to_string() const -> std::string {
   return str;
 }
 
-auto exp_symbol::duplicate() const -> uptr<exp> {
-  auto copy = std::make_unique<exp_symbol>();
+auto exp_symbol_t::duplicate() const -> uptr<exp_t> {
+  auto copy = std::make_unique<exp_symbol_t>();
   copy->str = str;
   return copy;
 }
