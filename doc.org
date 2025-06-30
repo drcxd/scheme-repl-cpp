@@ -13,3 +13,7 @@ As a result, we use a similar memory management as Scheme: all expressions are p
 * On Implementation of Environment
 
 In explicit control evaluator, the environment is implemented using lists. Of course, this is because it is implemented using Scheme. In our implementation, we decide to use C++ data structures to implement the environment.
+
+* On the Stack
+
+In the explicit control evaluator, there is a "machine stack" that helps to maintain the value of the registers. Is it necessary in our implementation? Anyway, I need to figure out a way to deal with the change of environment.

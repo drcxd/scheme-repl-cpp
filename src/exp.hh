@@ -35,6 +35,7 @@ struct exp_string_t : public exp_t {
 struct exp_symbol_t : public exp_t {
   auto to_string() const -> std::string override;
   auto duplicate() const -> uptr<exp_t> override;
+  auto eval() -> uptr<exp_t> override;
   std::string str;
 };
 

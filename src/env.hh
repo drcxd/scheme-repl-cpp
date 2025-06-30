@@ -22,5 +22,5 @@ struct env_t {
 
 namespace genv {
 auto init_global_environment() -> void;
-auto get_global_environment() -> env_t;
+auto get_global_environment() -> env_t *;
 } // namespace genv

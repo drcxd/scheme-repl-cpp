@@ -132,15 +132,23 @@ static auto parse_list(const std::string_view& str) -> uptr<exp_list_t> {
 
   std::vector<std::string_view> elements = partition_list(str);
   // partition elements
-  auto new_list = std::make_unique<exp_list_t>();
+  // auto new_list = std::make_unique<exp_list_t>();
+  uptr<exp_list_t> exp;
+  bool first = true;
   for (auto& element : elements) {
     uptr<exp_t> elem_exp = exp_t::parse(element);
-    // checking for keywords
-    // if (elem_exp->to_string() == "define") {
-    // }
-    new_list->list.push_back(std::move(elem_exp));
+    // checking for keywords, keywords are special symbols now
+    if (first) {
+      if (elem_exp->to_string() == "define") {
+        exp = std::make_unique<exp_define_t>();
+      } else {
+        exp = std::make_unique<exp_list_t>();
+      }
+    }
+    exp->list.push_back(std::move(elem_exp));
+    first = false;
   }
-  return new_list;
+  return exp;
 }
 
 auto exp_t::parse(const std::string_view& str) -> uptr<exp_t> {
@@ -240,17 +248,28 @@ auto exp_symbol_t::duplicate() const -> uptr<exp_t> {
   return copy;
 }
 
+auto exp_symbol_t::eval() -> uptr<exp_t> {
+  auto* env = genv::get_global_environment();
+  auto* ret = env->lookup_variable_value(str);
+  if (ret != nullptr) {
+    return ret->duplicate();
+  }
+  auto error = std::make_unique<exp_string_t>();
+  error->str = std::format("ERROR: undefined symbol {0}", str);
+  return error;
+}
+
 auto exp_define_t::eval() -> uptr<exp_t> {
   assert(!list.empty());
   auto it = list.begin();
   auto& keyword = *it;
   assert(keyword->to_string() == "define");
   ++it;
-  auto env = genv::get_global_environment();
+  auto* env = genv::get_global_environment();
   const auto& var = (*it)->to_string();
   ++it;
   auto value = (*it)->eval();
-  env.define_variable(var, std::move(value));
+  env->define_variable(var, std::move(value));
   auto ret = std::make_unique<exp_string_t>();
   ret->str = "ok";
   return ret;
