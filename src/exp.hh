@@ -17,7 +17,6 @@ struct exp_t {
   static auto parse(const std::string_view& str) -> uptr<exp_t>;
 };
 
-// we only support integer operation for now
 struct exp_number_t : public exp_t {
   auto to_string() const -> std::string override;
   auto duplicate() const -> uptr<exp_t> override;
@@ -54,4 +53,13 @@ struct exp_quoted_t : public exp_t {
 
 struct exp_define_t : public exp_list_t {
   auto eval() -> uptr<exp_t> override;
+};
+
+struct exp_branch_t : public exp_list_t {
+  auto eval() -> uptr<exp_t> override;
+};
+
+struct exp_lambda_t : public exp_list_t {
+  auto eval() -> uptr<exp_t> override;
+  env_t captured_env;
 };

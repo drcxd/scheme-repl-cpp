@@ -141,6 +141,8 @@ static auto parse_list(const std::string_view& str) -> uptr<exp_list_t> {
     if (first) {
       if (elem_exp->to_string() == "define") {
         exp = std::make_unique<exp_define_t>();
+      } else if (elem_exp->to_string() == "if") {
+        exp = std::make_unique<exp_branch_t>();
       } else {
         exp = std::make_unique<exp_list_t>();
       }
@@ -249,8 +251,8 @@ auto exp_symbol_t::duplicate() const -> uptr<exp_t> {
 }
 
 auto exp_symbol_t::eval() -> uptr<exp_t> {
-  auto* env = genv::get_global_environment();
-  auto* ret = env->lookup_variable_value(str);
+  auto env = env::get_current_environment();
+  auto* ret = env::lookup_variable_value(str, env);
   if (ret != nullptr) {
     return ret->duplicate();
   }
@@ -265,12 +267,28 @@ auto exp_define_t::eval() -> uptr<exp_t> {
   auto& keyword = *it;
   assert(keyword->to_string() == "define");
   ++it;
-  auto* env = genv::get_global_environment();
+  auto env = env::get_current_environment();
   const auto& var = (*it)->to_string();
   ++it;
   auto value = (*it)->eval();
-  env->define_variable(var, std::move(value));
+  env::define_variable(var, std::move(value), env);
   auto ret = std::make_unique<exp_string_t>();
   ret->str = "ok";
   return ret;
+}
+
+auto exp_branch_t::eval() -> uptr<exp_t> {
+  assert(!list.empty());
+  auto it = list.begin();
+  auto& keyword = *it;
+  assert(keyword->to_string() == "if");
+  ++it;
+  // auto* env = env::get_current_environment();
+  auto condition = (*it)->eval();
+  ++it;
+  if (condition.get() != nullptr && condition->to_string() == "true") {
+    return (*it)->eval();
+  }
+  ++it;
+  return (*it)->eval();
 }

@@ -5,7 +5,7 @@
 
 int main(int argc, char **argv) {
 
-  genv::init_global_environment();
+  env::init_global_environment();
 
   std::string input;
   while (true) {

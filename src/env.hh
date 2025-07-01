@@ -1,26 +1,12 @@
 #pragma once
 
-#include <list>
-#include <string>
-
 #include "typedef.hh"
 
-struct exp_t;
-
-using record_t = std::pair<std::string, uptr<exp_t>>;
-
-struct frame_t {
-  std::list<sptr<record_t>> records;
-};
-
-struct env_t {
-  std::list<sptr<frame_t>> frames;
-
-  auto lookup_variable_value(const std::string_view &var) -> exp_t *;
-  auto define_variable(const std::string_view &var, uptr<exp_t> value) -> void;
-};
-
-namespace genv {
+namespace env {
 auto init_global_environment() -> void;
-auto get_global_environment() -> env_t *;
-} // namespace genv
+auto get_global_environment() -> env_t;
+auto get_current_environment() -> env_t;
+auto lookup_variable_value(const std::string_view &var, env_t env) -> exp_t *;
+auto define_variable(const std::string_view &var, uptr<exp_t> value, env_t env)
+    -> void;
+} // namespace env
