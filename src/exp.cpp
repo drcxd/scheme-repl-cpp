@@ -30,16 +30,7 @@ static auto is_list(const std::string_view &str) -> bool {
 }
 
 static auto is_quoted(const std::string_view &str) -> bool {
-  bool is_empty = str.empty();
-  bool begin_quote = str.starts_with('\'');
-  bool has_space = false;
-  for (auto c : str) {
-    if (c == ' ') {
-      has_space = true;
-      break;
-    }
-  }
-  return !is_empty && begin_quote && !has_space;
+  return str.starts_with('\'');
 }
 
 static auto is_symbol(const std::string_view &str) -> bool {
