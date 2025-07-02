@@ -46,28 +46,28 @@ static auto is_symbol(const std::string_view &str) -> bool {
   return str.find(' ') == std::string_view::npos;
 }
 
-static auto parse_quoted(const std::string_view& str) -> uptr<obj_t> {
+static auto parse_quoted(const std::string_view& str) -> sptr<obj_t> {
   assert(str.starts_with('\''));
-  auto result = std::make_unique<obj_quoted_t>();
+  auto result = std::make_shared<obj_quoted_t>();
   result->inner_obj = parse_exp({str.cbegin() + 1, str.cend()});
   return result;
 }
 
-static auto parse_string(const std::string_view& str) -> uptr<obj_t> {
+static auto parse_string(const std::string_view& str) -> sptr<obj_t> {
   assert(str.starts_with('"') && str.ends_with('"'));
-  auto obj = std::make_unique<obj_string_t>();
+  auto obj = std::make_shared<obj_string_t>();
   obj-> str = {str.begin() + 1, str.end() - 1};
   return obj;
 }
 
-static auto parse_number(const std::string_view& str) -> uptr<obj_t> {
-  auto obj = std::make_unique<obj_number_t>();
+static auto parse_number(const std::string_view& str) -> sptr<obj_t> {
+  auto obj = std::make_shared<obj_number_t>();
   obj->n = std::atof(str.data());
   return obj;
 }
 
-static auto parse_symbol(const std::string_view& str) -> uptr<obj_t> {
-  auto obj = std::make_unique<obj_symbol_t>();
+static auto parse_symbol(const std::string_view& str) -> sptr<obj_t> {
+  auto obj = std::make_shared<obj_symbol_t>();
   obj->str = str;
   return obj;
 }
@@ -128,25 +128,25 @@ static auto partition_list(const std::string_view &str)
 }
 
 // str must begins with ( and ends with )
-static auto parse_list(const std::string_view& str) -> uptr<obj_list_t> {
+static auto parse_list(const std::string_view& str) -> sptr<obj_list_t> {
   assert(str.starts_with('(') && str.ends_with(')'));
 
   std::vector<std::string_view> elements = partition_list(str);
   // partition elements
-  uptr<obj_list_t> obj;
+  sptr<obj_list_t> obj;
   bool first = true;
   for (auto& element : elements) {
-    uptr<obj_t> elem_obj = parse_exp(element);
+    sptr<obj_t> elem_obj = parse_exp(element);
     // checking for keywords, keywords are special symbols now
     if (first) {
       if (elem_obj->to_string() == "define") {
-        obj = std::make_unique<obj_define_t>();
+        obj = std::make_shared<obj_define_t>();
       } else if (elem_obj->to_string() == "if") {
-        obj = std::make_unique<obj_branch_t>();
+        obj = std::make_shared<obj_branch_t>();
       } else if (elem_obj->to_string() == "lambda") {
-        obj = std::make_unique<obj_lambda_t>();
+        obj = std::make_shared<obj_lambda_t>();
       } else {
-        obj = std::make_unique<obj_list_t>();
+        obj = std::make_shared<obj_list_t>();
       }
     }
     obj->list.push_back(std::move(elem_obj));
@@ -155,7 +155,7 @@ static auto parse_list(const std::string_view& str) -> uptr<obj_list_t> {
   return obj;
 }
 
-auto parse_exp(const std::string_view& str) -> uptr<obj_t> {
+auto parse_exp(const std::string_view& str) -> sptr<obj_t> {
   if (str.empty()) {
     return nullptr;
   }
@@ -180,14 +180,14 @@ auto parse_exp(const std::string_view& str) -> uptr<obj_t> {
 
 auto obj_number_t::to_string() const -> std::string { return std::to_string(n); }
 
-auto obj_number_t::duplicate() const -> uptr<obj_t> {
-  auto copy = std::make_unique<obj_number_t>();
+auto obj_number_t::duplicate() const -> sptr<obj_t> {
+  auto copy = std::make_shared<obj_number_t>();
   copy->n = n;
   return copy;
 }
 
-auto obj_number_t::eval() -> uptr<obj_t> {
-  return duplicate();
+auto obj_number_t::eval() -> sptr<obj_t> {
+  return shared_from_this();
 }
 
 auto obj_string_t::to_string() const -> std::string {
@@ -196,14 +196,14 @@ auto obj_string_t::to_string() const -> std::string {
   return ss.str();
 }
 
-auto obj_string_t::duplicate() const -> uptr<obj_t> {
-  auto copy = std::make_unique<obj_string_t>();
+auto obj_string_t::duplicate() const -> sptr<obj_t> {
+  auto copy = std::make_shared<obj_string_t>();
   copy->str = str;
   return copy;
 }
 
-auto obj_string_t::eval() -> uptr<obj_t> {
-  return duplicate();
+auto obj_string_t::eval() -> sptr<obj_t> {
+  return shared_from_this();
 }
 
 auto obj_list_t::to_string() const -> std::string {
@@ -220,16 +220,16 @@ auto obj_list_t::to_string() const -> std::string {
   return ss.str();
 }
 
-auto obj_list_t::duplicate() const -> uptr<obj_t> {
-  auto copy = std::make_unique<obj_list_t>();
+auto obj_list_t::duplicate() const -> sptr<obj_t> {
+  auto copy = std::make_shared<obj_list_t>();
   copy->list = list;
   return copy;
 }
 
-auto obj_list_t::eval() -> uptr<obj_t> {
+auto obj_list_t::eval() -> sptr<obj_t> {
   assert(!list.empty());
   auto it = list.begin();
-  auto* op = dynamic_cast<proc_t *>((*it)->eval().release());
+  auto* op = dynamic_cast<proc_t *>((*it)->eval().get());
   assert(op != nullptr);
   ++it;
   return op->apply({it, list.end()});
@@ -241,38 +241,38 @@ auto obj_quoted_t::to_string() const -> std::string {
   return ss.str();
 }
 
-auto obj_quoted_t::duplicate() const -> uptr<obj_t> {
-  auto copy = std::make_unique<obj_quoted_t>();
+auto obj_quoted_t::duplicate() const -> sptr<obj_t> {
+  auto copy = std::make_shared<obj_quoted_t>();
   copy->inner_obj = inner_obj->duplicate();
   return copy;
 }
 
-auto obj_quoted_t::eval() -> uptr<obj_t> {
-  return duplicate();
+auto obj_quoted_t::eval() -> sptr<obj_t> {
+  return shared_from_this();
 }
 
 auto obj_symbol_t::to_string() const -> std::string {
   return str;
 }
 
-auto obj_symbol_t::duplicate() const -> uptr<obj_t> {
-  auto copy = std::make_unique<obj_symbol_t>();
+auto obj_symbol_t::duplicate() const -> sptr<obj_t> {
+  auto copy = std::make_shared<obj_symbol_t>();
   copy->str = str;
   return copy;
 }
 
-auto obj_symbol_t::eval() -> uptr<obj_t> {
+auto obj_symbol_t::eval() -> sptr<obj_t> {
   auto env = env::get_current_environment();
-  auto* ret = env::lookup_variable_value(str, env);
+  auto ret = env::lookup_variable_value(str, env);
   if (ret != nullptr) {
-    return ret->duplicate();
+    return ret;
   }
-  auto error = std::make_unique<obj_string_t>();
+  auto error = std::make_shared<obj_string_t>();
   error->str = std::format("ERROR: undefined symbol {0}", str);
   return error;
 }
 
-auto obj_define_t::eval() -> uptr<obj_t> {
+auto obj_define_t::eval() -> sptr<obj_t> {
   assert(!list.empty());
   auto it = list.begin();
   auto& keyword = *it;
@@ -283,12 +283,12 @@ auto obj_define_t::eval() -> uptr<obj_t> {
   ++it;
   auto value = (*it)->eval();
   env::define_variable(var, std::move(value), env);
-  auto ret = std::make_unique<obj_string_t>();
+  auto ret = std::make_shared<obj_string_t>();
   ret->str = "ok";
   return ret;
 }
 
-auto obj_branch_t::eval() -> uptr<obj_t> {
+auto obj_branch_t::eval() -> sptr<obj_t> {
   assert(!list.empty());
   auto it = list.begin();
   auto& keyword = *it;
@@ -303,15 +303,15 @@ auto obj_branch_t::eval() -> uptr<obj_t> {
   return (*it)->eval();
 }
 
-auto obj_lambda_t::duplicate() const -> uptr<obj_t> {
-  auto copy = std::make_unique<obj_lambda_t>();
+auto obj_lambda_t::duplicate() const -> sptr<obj_t> {
+  auto copy = std::make_shared<obj_lambda_t>();
   copy->list = list;
   return copy;
 }
 
-auto obj_lambda_t::eval() -> uptr<obj_t> {
+auto obj_lambda_t::eval() -> sptr<obj_t> {
   assert(!list.empty());
-  auto proc = std::make_unique<proc_t>();
+  auto proc = std::make_shared<proc_t>();
 
   auto it = list.begin();
   ++it;
