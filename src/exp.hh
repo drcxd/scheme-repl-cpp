@@ -6,60 +6,62 @@
 
 #include "typedef.hh"
 
-struct exp_t {
-  virtual ~exp_t() {}
+
+struct obj_t {
+  virtual ~obj_t() = default;
+  virtual auto duplicate() const -> uptr<obj_t> = 0;
   virtual auto to_string() const -> std::string = 0;
-  virtual auto duplicate() const -> uptr<exp_t> = 0;
-  virtual auto eval() -> uptr<exp_t> {
+  virtual auto eval() -> uptr<obj_t> {
     assert(false); // need implementation
   }
-
-  static auto parse(const std::string_view& str) -> uptr<exp_t>;
 };
 
-struct exp_number_t : public exp_t {
+auto parse_exp(const std::string_view& str) -> uptr<obj_t>;
+
+struct obj_number_t : public obj_t {
   auto to_string() const -> std::string override;
-  auto duplicate() const -> uptr<exp_t> override;
-  auto eval() -> uptr<exp_t> override;
+  auto duplicate() const -> uptr<obj_t> override;
+  auto eval() -> uptr<obj_t> override;
   double n = 0;
 };
 
-struct exp_string_t : public exp_t {
+struct obj_string_t : public obj_t {
   auto to_string() const -> std::string override;
-  auto duplicate() const -> uptr<exp_t> override;
-  auto eval() -> uptr<exp_t> override;
+  auto duplicate() const -> uptr<obj_t> override;
+  auto eval() -> uptr<obj_t> override;
   std::string str;
 };
 
-struct exp_symbol_t : public exp_t {
+struct obj_symbol_t : public obj_t {
   auto to_string() const -> std::string override;
-  auto duplicate() const -> uptr<exp_t> override;
-  auto eval() -> uptr<exp_t> override;
+  auto duplicate() const -> uptr<obj_t> override;
+  auto eval() -> uptr<obj_t> override;
   std::string str;
 };
 
-struct exp_list_t : public exp_t {
+struct obj_list_t : public obj_t {
   auto to_string() const -> std::string override;
-  auto duplicate() const -> uptr<exp_t> override;
-  std::list<sptr<exp_t>> list;
+  auto duplicate() const -> uptr<obj_t> override;
+  auto eval() -> uptr<obj_t> override;
+  std::list<sptr<obj_t>> list;
 };
 
-struct exp_quoted_t : public exp_t {
+struct obj_quoted_t : public obj_t {
   auto to_string() const -> std::string override;
-  auto duplicate() const -> uptr<exp_t> override;
-  auto eval() -> uptr<exp_t> override;
-  uptr<exp_t> inner_exp;
+  auto duplicate() const -> uptr<obj_t> override;
+  auto eval() -> uptr<obj_t> override;
+  uptr<obj_t> inner_obj;
 };
 
-struct exp_define_t : public exp_list_t {
-  auto eval() -> uptr<exp_t> override;
+struct obj_define_t : public obj_list_t {
+  auto eval() -> uptr<obj_t> override;
 };
 
-struct exp_branch_t : public exp_list_t {
-  auto eval() -> uptr<exp_t> override;
+struct obj_branch_t : public obj_list_t {
+  auto eval() -> uptr<obj_t> override;
 };
 
-struct exp_lambda_t : public exp_list_t {
-  auto eval() -> uptr<exp_t> override;
-  env_t captured_env;
+struct obj_lambda_t : public obj_list_t {
+  auto eval() -> uptr<obj_t> override;
+  auto duplicate() const -> uptr<obj_t> override;
 };

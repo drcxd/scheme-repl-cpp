@@ -1,5 +1,6 @@
 #include "exp.hh"
 #include "env.hh"
+#include "procedure.hh"
 
 #include <cassert>
 #include <stdexcept>
@@ -45,30 +46,30 @@ static auto is_symbol(const std::string_view &str) -> bool {
   return str.find(' ') == std::string_view::npos;
 }
 
-static auto parse_quoted(const std::string_view& str) -> uptr<exp_t> {
+static auto parse_quoted(const std::string_view& str) -> uptr<obj_t> {
   assert(str.starts_with('\''));
-  auto result = std::make_unique<exp_quoted_t>();
-  result->inner_exp = exp_t::parse({str.cbegin() + 1, str.cend()});
+  auto result = std::make_unique<obj_quoted_t>();
+  result->inner_obj = parse_exp({str.cbegin() + 1, str.cend()});
   return result;
 }
 
-static auto parse_string(const std::string_view& str) -> uptr<exp_t> {
+static auto parse_string(const std::string_view& str) -> uptr<obj_t> {
   assert(str.starts_with('"') && str.ends_with('"'));
-  auto exp = std::make_unique<exp_string_t>();
-  exp-> str = {str.begin() + 1, str.end() - 1};
-  return exp;
+  auto obj = std::make_unique<obj_string_t>();
+  obj-> str = {str.begin() + 1, str.end() - 1};
+  return obj;
 }
 
-static auto parse_number(const std::string_view& str) -> uptr<exp_t> {
-  auto exp = std::make_unique<exp_number_t>();
-  exp->n = std::atof(str.data());
-  return exp;
+static auto parse_number(const std::string_view& str) -> uptr<obj_t> {
+  auto obj = std::make_unique<obj_number_t>();
+  obj->n = std::atof(str.data());
+  return obj;
 }
 
-static auto parse_symbol(const std::string_view& str) -> uptr<exp_t> {
-  auto exp = std::make_unique<exp_symbol_t>();
-  exp->str = str;
-  return exp;
+static auto parse_symbol(const std::string_view& str) -> uptr<obj_t> {
+  auto obj = std::make_unique<obj_symbol_t>();
+  obj->str = str;
+  return obj;
 }
 
 // begin must point to an opening parenthesis, if no matching closing
@@ -127,33 +128,34 @@ static auto partition_list(const std::string_view &str)
 }
 
 // str must begins with ( and ends with )
-static auto parse_list(const std::string_view& str) -> uptr<exp_list_t> {
+static auto parse_list(const std::string_view& str) -> uptr<obj_list_t> {
   assert(str.starts_with('(') && str.ends_with(')'));
 
   std::vector<std::string_view> elements = partition_list(str);
   // partition elements
-  // auto new_list = std::make_unique<exp_list_t>();
-  uptr<exp_list_t> exp;
+  uptr<obj_list_t> obj;
   bool first = true;
   for (auto& element : elements) {
-    uptr<exp_t> elem_exp = exp_t::parse(element);
+    uptr<obj_t> elem_obj = parse_exp(element);
     // checking for keywords, keywords are special symbols now
     if (first) {
-      if (elem_exp->to_string() == "define") {
-        exp = std::make_unique<exp_define_t>();
-      } else if (elem_exp->to_string() == "if") {
-        exp = std::make_unique<exp_branch_t>();
+      if (elem_obj->to_string() == "define") {
+        obj = std::make_unique<obj_define_t>();
+      } else if (elem_obj->to_string() == "if") {
+        obj = std::make_unique<obj_branch_t>();
+      } else if (elem_obj->to_string() == "lambda") {
+        obj = std::make_unique<obj_lambda_t>();
       } else {
-        exp = std::make_unique<exp_list_t>();
+        obj = std::make_unique<obj_list_t>();
       }
     }
-    exp->list.push_back(std::move(elem_exp));
+    obj->list.push_back(std::move(elem_obj));
     first = false;
   }
-  return exp;
+  return obj;
 }
 
-auto exp_t::parse(const std::string_view& str) -> uptr<exp_t> {
+auto parse_exp(const std::string_view& str) -> uptr<obj_t> {
   if (str.empty()) {
     return nullptr;
   }
@@ -176,35 +178,35 @@ auto exp_t::parse(const std::string_view& str) -> uptr<exp_t> {
   return nullptr;
 }
 
-auto exp_number_t::to_string() const -> std::string { return std::to_string(n); }
+auto obj_number_t::to_string() const -> std::string { return std::to_string(n); }
 
-auto exp_number_t::duplicate() const -> uptr<exp_t> {
-  auto copy = std::make_unique<exp_number_t>();
+auto obj_number_t::duplicate() const -> uptr<obj_t> {
+  auto copy = std::make_unique<obj_number_t>();
   copy->n = n;
   return copy;
 }
 
-auto exp_number_t::eval() -> uptr<exp_t> {
+auto obj_number_t::eval() -> uptr<obj_t> {
   return duplicate();
 }
 
-auto exp_string_t::to_string() const -> std::string {
+auto obj_string_t::to_string() const -> std::string {
   std::stringstream ss;
   ss << '"' << str << '"';
   return ss.str();
 }
 
-auto exp_string_t::duplicate() const -> uptr<exp_t> {
-  auto copy = std::make_unique<exp_string_t>();
+auto obj_string_t::duplicate() const -> uptr<obj_t> {
+  auto copy = std::make_unique<obj_string_t>();
   copy->str = str;
   return copy;
 }
 
-auto exp_string_t::eval() -> uptr<exp_t> {
+auto obj_string_t::eval() -> uptr<obj_t> {
   return duplicate();
 }
 
-auto exp_list_t::to_string() const -> std::string {
+auto obj_list_t::to_string() const -> std::string {
   std::stringstream ss;
   ss << "(";
   for (auto it = list.cbegin(); it != list.cend(); ++it) {
@@ -218,50 +220,59 @@ auto exp_list_t::to_string() const -> std::string {
   return ss.str();
 }
 
-auto exp_list_t::duplicate() const -> uptr<exp_t> {
-  auto copy = std::make_unique<exp_list_t>();
+auto obj_list_t::duplicate() const -> uptr<obj_t> {
+  auto copy = std::make_unique<obj_list_t>();
   copy->list = list;
   return copy;
 }
 
-auto exp_quoted_t::to_string() const -> std::string {
+auto obj_list_t::eval() -> uptr<obj_t> {
+  assert(!list.empty());
+  auto it = list.begin();
+  auto* op = dynamic_cast<proc_t *>((*it)->eval().release());
+  assert(op != nullptr);
+  ++it;
+  return op->apply({it, list.end()});
+}
+
+auto obj_quoted_t::to_string() const -> std::string {
   std::stringstream ss;
-  ss << '\'' << inner_exp->to_string();
+  ss << '\'' << inner_obj->to_string();
   return ss.str();
 }
 
-auto exp_quoted_t::duplicate() const -> uptr<exp_t> {
-  auto copy = std::make_unique<exp_quoted_t>();
-  copy->inner_exp = inner_exp->duplicate();
+auto obj_quoted_t::duplicate() const -> uptr<obj_t> {
+  auto copy = std::make_unique<obj_quoted_t>();
+  copy->inner_obj = inner_obj->duplicate();
   return copy;
 }
 
-auto exp_quoted_t::eval() -> uptr<exp_t> {
+auto obj_quoted_t::eval() -> uptr<obj_t> {
   return duplicate();
 }
 
-auto exp_symbol_t::to_string() const -> std::string {
+auto obj_symbol_t::to_string() const -> std::string {
   return str;
 }
 
-auto exp_symbol_t::duplicate() const -> uptr<exp_t> {
-  auto copy = std::make_unique<exp_symbol_t>();
+auto obj_symbol_t::duplicate() const -> uptr<obj_t> {
+  auto copy = std::make_unique<obj_symbol_t>();
   copy->str = str;
   return copy;
 }
 
-auto exp_symbol_t::eval() -> uptr<exp_t> {
+auto obj_symbol_t::eval() -> uptr<obj_t> {
   auto env = env::get_current_environment();
   auto* ret = env::lookup_variable_value(str, env);
   if (ret != nullptr) {
     return ret->duplicate();
   }
-  auto error = std::make_unique<exp_string_t>();
+  auto error = std::make_unique<obj_string_t>();
   error->str = std::format("ERROR: undefined symbol {0}", str);
   return error;
 }
 
-auto exp_define_t::eval() -> uptr<exp_t> {
+auto obj_define_t::eval() -> uptr<obj_t> {
   assert(!list.empty());
   auto it = list.begin();
   auto& keyword = *it;
@@ -272,18 +283,17 @@ auto exp_define_t::eval() -> uptr<exp_t> {
   ++it;
   auto value = (*it)->eval();
   env::define_variable(var, std::move(value), env);
-  auto ret = std::make_unique<exp_string_t>();
+  auto ret = std::make_unique<obj_string_t>();
   ret->str = "ok";
   return ret;
 }
 
-auto exp_branch_t::eval() -> uptr<exp_t> {
+auto obj_branch_t::eval() -> uptr<obj_t> {
   assert(!list.empty());
   auto it = list.begin();
   auto& keyword = *it;
   assert(keyword->to_string() == "if");
   ++it;
-  // auto* env = env::get_current_environment();
   auto condition = (*it)->eval();
   ++it;
   if (condition.get() != nullptr && condition->to_string() == "true") {
@@ -291,4 +301,28 @@ auto exp_branch_t::eval() -> uptr<exp_t> {
   }
   ++it;
   return (*it)->eval();
+}
+
+auto obj_lambda_t::duplicate() const -> uptr<obj_t> {
+  auto copy = std::make_unique<obj_lambda_t>();
+  copy->list = list;
+  return copy;
+}
+
+auto obj_lambda_t::eval() -> uptr<obj_t> {
+  assert(!list.empty());
+  auto proc = std::make_unique<proc_t>();
+
+  auto it = list.begin();
+  ++it;
+  sptr<obj_list_t> params = std::dynamic_pointer_cast<obj_list_t>(*it);
+  assert(params.get() != nullptr);
+  proc->params = params->list;
+
+  ++it;
+  while (it != list.end()) {
+    proc->body.push_back(*it);
+    ++it;
+  }
+  return proc;
 }
