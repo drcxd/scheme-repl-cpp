@@ -11,30 +11,28 @@ namespace env {
 auto init_global_environment() -> void {
   // an empty frame with nothing
   global.push_front(std::make_shared<frame_t>());
-  curenv = global.begin();
+  curenv = global;
 }
 
-auto get_global_environment() -> env_t { return global.begin(); }
+auto get_global_environment() -> env_t { return global; }
 
 auto get_current_environment() -> env_t { return curenv; }
 
 auto lookup_variable_value(const std::string_view &var, env_t env) -> exp_t * {
-  while (env != global.end()) {
-    auto &frame = *env;
+  for (auto &frame : env) {
     for (auto &record : *frame) {
       if (record->first == var) {
         return record->second.get();
       }
     }
-    ++env;
   }
   return nullptr;
 }
 
 auto define_variable(const std::string_view &var, uptr<exp_t> value, env_t env)
     -> void {
-  assert(env != global.end());
-  auto &first_frame = *env;
+  assert(!env.empty());
+  auto &first_frame = *env.begin();
   bool update = false;
   for (auto &record : *first_frame) {
     if (record->first == var) {
