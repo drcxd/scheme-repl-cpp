@@ -17,3 +17,12 @@ In explicit control evaluator, the environment is implemented using lists. Of co
 * On the Stack
 
 In the explicit control evaluator, there is a "machine stack" that helps to maintain the value of the registers. Is it necessary in our implementation? Anyway, I need to figure out a way to deal with the change of environment.
+
+* On Application
+
+How do we implement the evaluation of expressions such as ~(+ 1 2)~? For the symbol ~+~, it represents a primitive procedure which takes arbitrary number of arguments. Thus, we must implement this procedure in C++ first.
+
+* Objects
+
+We have only modeled expressions but not objects so far, and we have been mistakenly treat expressions as objects. Evaluating an expression yields a object rather than another expression. We found this problem when trying to introduce procedures into the system. A procedure is not an expression, but it is  something than can be stored in the environment.
+
