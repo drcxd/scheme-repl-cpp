@@ -2,11 +2,11 @@
 
 #include <format>
 
-#include "exp.hh"
 #include "env.hh"
+#include "exp.hh"
 
-static auto get_number_checked(const sptr<obj_t>& v) -> double {
-  auto* num = dynamic_cast<obj_number_t *>(v.get());
+static auto get_number_checked(const sptr<obj_t> &v) -> double {
+  auto *num = dynamic_cast<obj_number_t *>(v.get());
   assert(num != nullptr);
   return num->n;
 }
@@ -14,14 +14,13 @@ static auto get_number_checked(const sptr<obj_t>& v) -> double {
 template <typename T>
 static auto for_each_numerical_arg(const std::list<sptr<obj_t>> &args, T func)
     -> void {
-  for (auto& arg : args) {
+  for (auto &arg : args) {
     auto ret = arg->eval();
     func(get_number_checked(ret));
   }
 }
 
-template <typename T>
-static auto list_len(const std::list<T>& l) -> int {
+template <typename T> static auto list_len(const std::list<T> &l) -> int {
   int n = 0;
   for (auto it = l.begin(); it != l.end(); ++it) {
     ++n;
@@ -30,7 +29,7 @@ static auto list_len(const std::list<T>& l) -> int {
 }
 
 auto proc_t::to_string() const -> std::string {
-  return std::format("procedure {}", (void*)this);
+  return std::format("procedure {}", (void *)this);
 }
 
 auto proc_t::duplicate() const -> sptr<obj_t> {
@@ -41,7 +40,7 @@ auto proc_t::duplicate() const -> sptr<obj_t> {
 
 auto proc_t::apply(const std::list<sptr<obj_t>> &args) -> sptr<obj_t> {
   std::list<sptr<obj_t>> arg_values;
-  for (auto& arg : args) {
+  for (auto &arg : args) {
     arg_values.push_back(arg->eval());
   }
   env_t cached_env = env::get_current_environment();
@@ -62,7 +61,7 @@ auto proc_t::apply(const std::list<sptr<obj_t>> &args) -> sptr<obj_t> {
 
 auto proc_add_t::apply(const std::list<sptr<obj_t>> &args) -> sptr<obj_t> {
   double n = 0;
-  auto accu = [&n](double num){ n += num; };
+  auto accu = [&n](double num) { n += num; };
   for_each_numerical_arg(args, accu);
   auto ret = std::make_shared<obj_number_t>();
   ret->n = n;
@@ -98,7 +97,7 @@ auto proc_min_t::duplicate() const -> sptr<obj_t> {
 
 auto proc_mul_t::apply(const std::list<sptr<obj_t>> &args) -> sptr<obj_t> {
   double n = 1;
-  auto accu = [&n](double num){ n *= num; };
+  auto accu = [&n](double num) { n *= num; };
   for_each_numerical_arg(args, accu);
   auto ret = std::make_shared<obj_number_t>();
   ret->n = n;
@@ -113,7 +112,7 @@ auto proc_mul_t::duplicate() const -> sptr<obj_t> {
 
 auto proc_div_t::apply(const std::list<sptr<obj_t>> &args) -> sptr<obj_t> {
   double n = 1;
-  auto accu = [&n](double num){ n /= num; };
+  auto accu = [&n](double num) { n /= num; };
   for_each_numerical_arg(args, accu);
   auto ret = std::make_shared<obj_number_t>();
   ret->n = n;

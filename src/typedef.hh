@@ -3,10 +3,8 @@
 #include <list>
 #include <memory>
 
-template<typename T>
-using uptr = std::unique_ptr<T>;
-template <typename T>
-using sptr = std::shared_ptr<T>;
+template <typename T> using uptr = std::unique_ptr<T>;
+template <typename T> using sptr = std::shared_ptr<T>;
 
 struct obj_t;
 using record_t = std::pair<std::string, sptr<obj_t>>;

@@ -6,7 +6,6 @@
 
 #include "typedef.hh"
 
-
 struct obj_t : public std::enable_shared_from_this<obj_t> {
   virtual ~obj_t() = default;
   virtual auto duplicate() const -> sptr<obj_t> = 0;
@@ -16,7 +15,7 @@ struct obj_t : public std::enable_shared_from_this<obj_t> {
   }
 };
 
-auto parse_exp(const std::string_view& str) -> sptr<obj_t>;
+auto parse_exp(const std::string_view &str) -> sptr<obj_t>;
 
 struct obj_number_t : public obj_t {
   auto to_string() const -> std::string override;

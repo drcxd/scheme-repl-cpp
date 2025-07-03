@@ -59,9 +59,7 @@ auto define_variable(const std::string_view &var, const sptr<obj_t> &value,
   }
 }
 
-auto set_current_environment(env_t env) -> void {
-  curenv = env;
-}
+auto set_current_environment(env_t env) -> void { curenv = env; }
 
 auto extend_env(env_t env, const std::list<sptr<obj_t>> &params,
                 const std::list<sptr<obj_t>> &values) -> env_t {

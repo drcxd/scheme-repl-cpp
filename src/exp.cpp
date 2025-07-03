@@ -3,12 +3,12 @@
 #include "procedure.hh"
 
 #include <cassert>
-#include <stdexcept>
-#include <sstream>
-#include <vector>
 #include <format>
+#include <sstream>
+#include <stdexcept>
+#include <vector>
 
-static auto is_number(const std::string_view& str) -> bool {
+static auto is_number(const std::string_view &str) -> bool {
   bool ret = true && !str.empty();
   int decimal = 0;
   for (int i = 0; i < str.length() && ret && decimal < 2; ++i) {
@@ -37,27 +37,27 @@ static auto is_symbol(const std::string_view &str) -> bool {
   return str.find(' ') == std::string_view::npos;
 }
 
-static auto parse_quoted(const std::string_view& str) -> sptr<obj_t> {
+static auto parse_quoted(const std::string_view &str) -> sptr<obj_t> {
   assert(str.starts_with('\''));
   auto result = std::make_shared<obj_quoted_t>();
   result->inner_obj = parse_exp({str.cbegin() + 1, str.cend()});
   return result;
 }
 
-static auto parse_string(const std::string_view& str) -> sptr<obj_t> {
+static auto parse_string(const std::string_view &str) -> sptr<obj_t> {
   assert(str.starts_with('"') && str.ends_with('"'));
   auto obj = std::make_shared<obj_string_t>();
-  obj-> str = {str.begin() + 1, str.end() - 1};
+  obj->str = {str.begin() + 1, str.end() - 1};
   return obj;
 }
 
-static auto parse_number(const std::string_view& str) -> sptr<obj_t> {
+static auto parse_number(const std::string_view &str) -> sptr<obj_t> {
   auto obj = std::make_shared<obj_number_t>();
   obj->n = std::atof(str.data());
   return obj;
 }
 
-static auto parse_symbol(const std::string_view& str) -> sptr<obj_t> {
+static auto parse_symbol(const std::string_view &str) -> sptr<obj_t> {
   auto obj = std::make_shared<obj_symbol_t>();
   obj->str = str;
   return obj;
@@ -119,14 +119,14 @@ static auto partition_list(const std::string_view &str)
 }
 
 // str must begins with ( and ends with )
-static auto parse_list(const std::string_view& str) -> sptr<obj_list_t> {
+static auto parse_list(const std::string_view &str) -> sptr<obj_list_t> {
   assert(str.starts_with('(') && str.ends_with(')'));
 
   std::vector<std::string_view> elements = partition_list(str);
   // partition elements
   sptr<obj_list_t> obj;
   bool first = true;
-  for (auto& element : elements) {
+  for (auto &element : elements) {
     sptr<obj_t> elem_obj = parse_exp(element);
     // checking for keywords, keywords are special symbols now
     if (first) {
@@ -146,7 +146,7 @@ static auto parse_list(const std::string_view& str) -> sptr<obj_list_t> {
   return obj;
 }
 
-auto parse_exp(const std::string_view& str) -> sptr<obj_t> {
+auto parse_exp(const std::string_view &str) -> sptr<obj_t> {
   if (str.empty()) {
     return nullptr;
   }
@@ -169,7 +169,9 @@ auto parse_exp(const std::string_view& str) -> sptr<obj_t> {
   return nullptr;
 }
 
-auto obj_number_t::to_string() const -> std::string { return std::to_string(n); }
+auto obj_number_t::to_string() const -> std::string {
+  return std::to_string(n);
+}
 
 auto obj_number_t::duplicate() const -> sptr<obj_t> {
   auto copy = std::make_shared<obj_number_t>();
@@ -177,9 +179,7 @@ auto obj_number_t::duplicate() const -> sptr<obj_t> {
   return copy;
 }
 
-auto obj_number_t::eval() -> sptr<obj_t> {
-  return shared_from_this();
-}
+auto obj_number_t::eval() -> sptr<obj_t> { return shared_from_this(); }
 
 auto obj_string_t::to_string() const -> std::string {
   std::stringstream ss;
@@ -193,9 +193,7 @@ auto obj_string_t::duplicate() const -> sptr<obj_t> {
   return copy;
 }
 
-auto obj_string_t::eval() -> sptr<obj_t> {
-  return shared_from_this();
-}
+auto obj_string_t::eval() -> sptr<obj_t> { return shared_from_this(); }
 
 auto obj_list_t::to_string() const -> std::string {
   std::stringstream ss;
@@ -220,7 +218,7 @@ auto obj_list_t::duplicate() const -> sptr<obj_t> {
 auto obj_list_t::eval() -> sptr<obj_t> {
   assert(!list.empty());
   auto it = list.begin();
-  auto* op = dynamic_cast<proc_t *>((*it)->eval().get());
+  auto *op = dynamic_cast<proc_t *>((*it)->eval().get());
   assert(op != nullptr);
   ++it;
   return op->apply({it, list.end()});
@@ -238,13 +236,9 @@ auto obj_quoted_t::duplicate() const -> sptr<obj_t> {
   return copy;
 }
 
-auto obj_quoted_t::eval() -> sptr<obj_t> {
-  return shared_from_this();
-}
+auto obj_quoted_t::eval() -> sptr<obj_t> { return shared_from_this(); }
 
-auto obj_symbol_t::to_string() const -> std::string {
-  return str;
-}
+auto obj_symbol_t::to_string() const -> std::string { return str; }
 
 auto obj_symbol_t::duplicate() const -> sptr<obj_t> {
   auto copy = std::make_shared<obj_symbol_t>();
@@ -269,11 +263,11 @@ auto obj_symbol_t::eval() -> sptr<obj_t> {
 auto obj_define_t::eval() -> sptr<obj_t> {
   assert(!list.empty());
   auto it = list.begin();
-  auto& keyword = *it;
+  auto &keyword = *it;
   assert(keyword->to_string() == "define");
   ++it;
   auto env = env::get_current_environment();
-  const auto& var = (*it)->to_string();
+  const auto &var = (*it)->to_string();
   ++it;
   auto value = (*it)->eval();
   env::define_variable(var, std::move(value), env);
@@ -285,7 +279,7 @@ auto obj_define_t::eval() -> sptr<obj_t> {
 auto obj_branch_t::eval() -> sptr<obj_t> {
   assert(!list.empty());
   auto it = list.begin();
-  auto& keyword = *it;
+  auto &keyword = *it;
   assert(keyword->to_string() == "if");
   ++it;
   auto condition = (*it)->eval();
