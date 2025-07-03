@@ -3,6 +3,7 @@
 #include <format>
 
 #include "exp.hh"
+#include "env.hh"
 
 template <typename T>
 static auto for_each_numerical_arg(const std::list<sptr<obj_t>> &args, T func)
@@ -26,12 +27,24 @@ auto proc_t::duplicate() const -> sptr<obj_t> {
 }
 
 auto proc_t::apply(const std::list<sptr<obj_t>> &args) -> sptr<obj_t> {
-  // TODO:
-  // evaluate args
-  // extend environments
-  // evalute body
-  // retrun result
-  return std::make_shared<obj_number_t>();
+  std::list<sptr<obj_t>> arg_values;
+  for (auto& arg : args) {
+    arg_values.push_back(arg->eval());
+  }
+  env_t cached_env = env::get_current_environment();
+  env_t extended_env = env::extend_env(cached_env, params, arg_values);
+  env::set_current_environment(extended_env);
+  sptr<obj_t> result;
+  auto it = body.begin();
+  while (it != body.end()) {
+    auto v = (*it)->eval();
+    ++it;
+    if (it == body.end()) {
+      result = v;
+    }
+  }
+  env::set_current_environment(cached_env);
+  return result;
 }
 
 auto proc_add_t::apply(const std::list<sptr<obj_t>> &args) -> sptr<obj_t> {
