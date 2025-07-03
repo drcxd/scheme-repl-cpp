@@ -21,6 +21,8 @@ auto init_global_environment() -> void {
   add_to_frame(base_frame, "-", std::make_shared<proc_min_t>());
   add_to_frame(base_frame, "*", std::make_shared<proc_mul_t>());
   add_to_frame(base_frame, "/", std::make_shared<proc_div_t>());
+  add_to_frame(base_frame, "<", std::make_shared<proc_lt_t>());
+  add_to_frame(base_frame, ">", std::make_shared<proc_gt_t>());
   global.push_front(base_frame);
   curenv = global;
 }

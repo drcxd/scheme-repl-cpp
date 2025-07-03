@@ -33,3 +33,11 @@ struct proc_div_t : public proc_t {
   auto apply(const std::list<sptr<obj_t>> &args) -> sptr<obj_t> override;
   auto duplicate() const -> sptr<obj_t> override;
 };
+
+struct proc_lt_t : public proc_t {
+  auto apply(const std::list<sptr<obj_t>> &args) -> sptr<obj_t> override;
+};
+
+struct proc_gt_t : public proc_t {
+  auto apply(const std::list<sptr<obj_t>> &args) -> sptr<obj_t> override;
+};

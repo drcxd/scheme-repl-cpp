@@ -253,6 +253,9 @@ auto obj_symbol_t::duplicate() const -> sptr<obj_t> {
 }
 
 auto obj_symbol_t::eval() -> sptr<obj_t> {
+  if (str == "true" or str == "false") {
+    return shared_from_this();
+  };
   auto env = env::get_current_environment();
   auto ret = env::lookup_variable_value(str, env);
   if (ret != nullptr) {
@@ -287,7 +290,8 @@ auto obj_branch_t::eval() -> sptr<obj_t> {
   ++it;
   auto condition = (*it)->eval();
   ++it;
-  if (condition.get() != nullptr && condition->to_string() == "true") {
+  if (dynamic_cast<obj_symbol_t *>(condition.get()) == nullptr ||
+      condition->to_string() != "false") {
     return (*it)->eval();
   }
   ++it;
