@@ -1,28 +1,55 @@
 * On Memory Management
 
-In Scheme, there is a garbage collector managing memory for the programmer. Since we are implementing a Scheme interpreter using C++, we have to manage the memory ourselves.
+In Scheme, there is a garbage collector managing memory for the
+programmer. Since we are implementing a Scheme interpreter using C++,
+we have to manage the memory ourselves.
 
-In my initial design, I abstract an expression as a base class. There are different derived classes representing certain kinds of expressions, such as numbers, strings, symbols, quoted expressions and lists.
+In my initial design, I abstract an expression as a base class. There
+are different derived classes representing certain kinds of
+expressions, such as numbers, strings, symbols, quoted expressions and
+lists.
 
-Now in Scheme, a list is a linked list of pairs, the first element in the pair holds the reference to the value while the second element holds the reference to the next pair in the list. It can be seen as an implementation of linked list in C++, so we decide to use ~std::list<exp>~ to represent lists in Scheme.
+Now in Scheme, a list is a linked list of pairs, the first element in
+the pair holds the reference to the value while the second element
+holds the reference to the next pair in the list. It can be seen as an
+implementation of linked list in C++, so we decide to use
+~std::list<exp>~ to represent lists in Scheme.
 
-A problem we are not sure now is whether the instances of expressions should be passed around by reference or by value. If they are passed by reference, then their memory must be managed somehow. In Scheme, the lists are passed by value, though it consists of pointers.
+A problem we are not sure now is whether the instances of expressions
+should be passed around by reference or by value. If they are passed
+by reference, then their memory must be managed somehow. In Scheme,
+the lists are passed by value, though it consists of pointers.
 
-As a result, we use a similar memory management as Scheme: all expressions are passed by value, but list elements are referenced through pointers.
+As a result, we use a similar memory management as Scheme: all
+expressions are passed by value, but list elements are referenced
+through pointers.
 
 * On Implementation of Environment
 
-In explicit control evaluator, the environment is implemented using lists. Of course, this is because it is implemented using Scheme. In our implementation, we decide to use C++ data structures to implement the environment.
+In explicit control evaluator, the environment is implemented using
+lists. Of course, this is because it is implemented using Scheme. In
+our implementation, we decide to use C++ data structures to implement
+the environment.
 
 * On the Stack
 
-In the explicit control evaluator, there is a "machine stack" that helps to maintain the value of the registers. Is it necessary in our implementation? Anyway, I need to figure out a way to deal with the change of environment.
+In the explicit control evaluator, there is a "machine stack" that
+helps to maintain the value of the registers. Is it necessary in our
+implementation? Anyway, I need to figure out a way to deal with the
+change of environment.
 
 * On Application
 
-How do we implement the evaluation of expressions such as ~(+ 1 2)~? For the symbol ~+~, it represents a primitive procedure which takes arbitrary number of arguments. Thus, we must implement this procedure in C++ first.
+How do we implement the evaluation of expressions such as ~(+ 1 2)~? For
+the symbol ~+~, it represents a primitive procedure which takes
+arbitrary number of arguments. Thus, we must implement this procedure
+in C++ first.
 
 * Objects
 
-We have only modeled expressions but not objects so far, and we have been mistakenly treat expressions as objects. Evaluating an expression yields a object rather than another expression. We found this problem when trying to introduce procedures into the system. A procedure is not an expression, but it is  something than can be stored in the environment.
-
+We have only modeled expressions but not objects so far, and we have
+been mistakenly treat expressions as objects. Evaluating an expression
+yields a object rather than another expression. We found this problem
+when trying to introduce procedures into the system. A procedure is
+not an expression, but it is something than can be stored in the
+environment.
