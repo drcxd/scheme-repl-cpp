@@ -146,3 +146,21 @@ auto proc_gt_t::apply(const std::list<sptr<obj_t>> &args) -> sptr<obj_t> {
   ret->str = op1 > op2 ? "true" : "false";
   return ret;
 }
+
+auto proc_cons_t::apply(const std::list<sptr<obj_t>> &args) -> sptr<obj_t> {
+  assert(!args.empty());
+  auto it = args.begin();
+  auto op1 = (*it++)->eval();
+  auto op2 = (*it)->eval();
+  std::shared_ptr<obj_list_t> ret;
+  if (auto list2 = std::dynamic_pointer_cast<obj_list_t>(op2)) {
+    ret = std::static_pointer_cast<obj_list_t>(list2->duplicate());
+    ret->list.push_front(op1);
+  } else {
+    auto new_list = std::make_shared<obj_list_t>();
+    new_list->list.push_front(op2);
+    new_list->list.push_front(op1);
+    ret = new_list;
+  }
+  return ret;
+}

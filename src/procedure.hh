@@ -41,3 +41,7 @@ struct proc_lt_t : public proc_t {
 struct proc_gt_t : public proc_t {
   auto apply(const std::list<sptr<obj_t>> &args) -> sptr<obj_t> override;
 };
+
+struct proc_cons_t : public proc_t {
+  auto apply(const std::list<sptr<obj_t>> &args) -> sptr<obj_t> override;
+};
