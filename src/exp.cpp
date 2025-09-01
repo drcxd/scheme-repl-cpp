@@ -101,10 +101,26 @@ static auto partition_list(const std::string_view &str)
       // we have a list
       auto end = find_matching_closing_paren({it, end_paren});
       if (end == end_paren) {
-        throw std::runtime_error(std::format("malformed expression %s", str));
+        throw std::runtime_error(std::format("malformed expression {}", str));
       }
       elements.push_back({it, end + 1});
       it = end + 1;
+    } else if (*it == '\'') {
+      auto quote_begin = it + 1;
+      auto quote_end = quote_begin;
+      if (*quote_begin == '(') {
+        quote_end = find_matching_closing_paren({quote_begin, end_paren});
+        if (quote_end == end_paren) {
+          throw std::runtime_error(std::format("malformed expression {}", str));
+        }
+        quote_end++;
+      } else {
+        while (*quote_end != ' ' && quote_end < end_paren) {
+          ++quote_end;
+        }
+      }
+      elements.push_back({it, quote_end});
+      it = quote_end + 1;
     } else {
       // a symbol, number, or a string
       auto end = it + 1;
@@ -236,7 +252,7 @@ auto obj_quoted_t::duplicate() const -> sptr<obj_t> {
   return copy;
 }
 
-auto obj_quoted_t::eval() -> sptr<obj_t> { return shared_from_this(); }
+auto obj_quoted_t::eval() -> sptr<obj_t> { return inner_obj; }
 
 auto obj_symbol_t::to_string() const -> std::string { return str; }
 
